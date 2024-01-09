@@ -17,8 +17,6 @@ Same for LearningAgentsRewards.h
 
 Same for class ULearningAgentsCompletion
 
-
-
 We should have visual Loging?
 
 ```
@@ -31,13 +29,24 @@ We should have visual Loging?
 #endif
 ```
 
-
-
-
 Then show the learning agents helper (LearningAgentsHelpser.h) here are the helper functions stored and they also use a static function.
 
 Explain why you would use Imitation learning for certain types of games
 
 Explain why you would learn Reinforcement learning for other types of games
 
-How can you combine these learning agents with a behavior tree?
+
+
+
+
+Add Behavior tree support.
+
+Why would we add behaviour tree support?
+
+Behaviour trees are good at a high level support for giving directives
+
+Some sub behaviours would be silly to train the neural network for. This mostly applies for actions that have a hard "When to fire this behaiour".
+
+A good way would be to implement the trained network further down the behaviour tree, For example. 
+
+train a neural network for enemies to fight with a human like behaviour, And when the enemy should fight in the behaviour tree then use the neural network

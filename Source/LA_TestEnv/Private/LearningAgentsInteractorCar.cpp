@@ -16,7 +16,9 @@ ULearningAgentsInteractorCar::ULearningAgentsInteractorCar(): TrackSpline(nullpt
                                                               CarDistanceToTrackObservation(nullptr),
                                                               CarThrottleAction(nullptr), CarBrakeAction(nullptr),
                                                               SteeringAction(nullptr),
-                                                              TrackSplineHelper(nullptr)
+                                                              TrackSplineHelper(nullptr),
+																CarActions()
+
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
@@ -79,10 +81,15 @@ void ULearningAgentsInteractorCar::SetObservations_Implementation(const TArray<i
 		const FVector carLocation = carAgent->GetActorLocation();
 		const FRotator carRotation = carAgent->GetActorRotation();
 		const FVector carVelocity = carAgent->GetVelocity();
+		//UE_LOG(LogTemp, Warning, TEXT("Car Velocity: %s"), *carVelocity.ToString())
 		
 		const float distanceAlongSplineAtPosition = TrackSplineHelper->GetDistanceAlongSplineAtPosition(AgentId, TrackSpline, carLocation);
 		const FVector splineLocationAtDistance = TrackSplineHelper->GetPositionAtDistanceAlongSpline(AgentId, TrackSpline, distanceAlongSplineAtPosition);
+		
+		
 		const FVector splineDirectionAtDistance = TrackSplineHelper->GetDirectionAtDistanceAlongSpline(AgentId, TrackSpline, distanceAlongSplineAtPosition);
+		
+		
 		const float proportionAlongSplineAsAngle = TrackSplineHelper->GetProportionAlongSplineAsAngle(AgentId, TrackSpline, distanceAlongSplineAtPosition);
 		const FVector nearestSplineLocation = TrackSplineHelper->GetNearestPositionOnSpline(AgentId, TrackSpline, carLocation);
 
@@ -101,7 +108,7 @@ void ULearningAgentsInteractorCar::SetupActions_Implementation()
 	Super::SetupActions_Implementation();
 
 	CarThrottleAction = UFloatAction::AddFloatAction(this, TEXT("Throttle"), 2.f);
-	CarBrakeAction = UFloatAction::AddFloatAction(this, TEXT("Brake"), 2.f);
+	CarBrakeAction = UFloatAction::AddFloatAction(this, TEXT("Brake"), 0.1f);
 	SteeringAction = UFloatAction::AddFloatAction(this, TEXT("Steering"), 2.f);
 
 	check(CarThrottleAction->IsValidLowLevel())
@@ -122,14 +129,23 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 		const float brakeValue = CarBrakeAction->GetFloatAction(AgentId);
 		const float steeringValue = SteeringAction->GetFloatAction(AgentId);
 
+		//TODO: these values should be forwarded to the Behavior Tree to take actions upon.
+		CarActions.Throttle = throttleValue;
+		CarActions.Brake = brakeValue;
+		CarActions.Steering = steeringValue;
 
-		//Apply the value's to the movement component of the actor
-		UChaosVehicleMovementComponent* vehMovementComponent = carAgent->FindComponentByClass<UChaosVehicleMovementComponent>();
-		check(vehMovementComponent->IsValidLowLevel())
-		if(!vehMovementComponent->IsValidLowLevel()) continue;
+	
+		
+		if(bApplyDirectlyToCar)
+		{
+			//Apply the value's to the movement component of the actor
+			 UChaosVehicleMovementComponent* vehMovementComponent = carAgent->FindComponentByClass<UChaosVehicleMovementComponent>();
+			 check(vehMovementComponent->IsValidLowLevel())
+			 if(!vehMovementComponent->IsValidLowLevel()) continue;
 
-		vehMovementComponent->SetThrottleInput(throttleValue);
-		vehMovementComponent->SetBrakeInput(brakeValue);
-		vehMovementComponent->SetSteeringInput(steeringValue);
+			vehMovementComponent->SetThrottleInput(CarActions.Throttle);
+			vehMovementComponent->SetBrakeInput(CarActions.Brake);
+			vehMovementComponent->SetSteeringInput(CarActions.Steering);
+		}
 	}
 }

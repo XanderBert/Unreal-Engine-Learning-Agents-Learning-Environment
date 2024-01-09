@@ -2,15 +2,35 @@
 
 #pragma once
 
+
+
+
+
 #include "CoreMinimal.h"
 #include "LearningAgentsActions.h"
 #include "LearningAgentsHelpers.h"
 #include "LearningAgentsInteractor.h"
 #include "LearningAgentsObservations.h"
 #include "LearningAgentsInteractorCar.generated.h"
-
-
 class USplineComponent;
+
+USTRUCT(BlueprintType, Blueprintable )
+struct FCarActions
+{
+	GENERATED_BODY()
+
+	FCarActions() : Throttle(0.f), Brake(0.f), Steering(0.f) {}
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actions")
+	float Throttle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actions")
+	float Brake;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actions")
+	float Steering;
+};
+
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class LA_TESTENV_API ULearningAgentsInteractorCar : public ULearningAgentsInteractor
@@ -29,6 +49,16 @@ public:
 	virtual void SetupActions_Implementation() override;
 	virtual void GetActions_Implementation(const TArray<int32>& AgentIds) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	USplineComponentHelper* GetTrackSplineHelper() const { return TrackSplineHelper; }
+
+
+	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	FCarActions& GetCarActions() { return CarActions; }
+
+	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	bool GetApplyDirectlyToCar() const { return bApplyDirectlyToCar; }
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -66,9 +96,13 @@ private:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Actions")
 	UFloatAction* SteeringAction;
 
-
-
 	//Helpers	
 	UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
 	USplineComponentHelper* TrackSplineHelper;
+
+	UPROPERTY(VisibleAnywhere, Category = "Actions")
+	FCarActions CarActions{};
+
+	UPROPERTY(EditAnywhere, Category = "Actions")
+	bool bApplyDirectlyToCar = true;
 };
