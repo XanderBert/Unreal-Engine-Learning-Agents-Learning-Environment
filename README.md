@@ -15,7 +15,7 @@ In this write up i will explain how to setup
 
 ## Initial Setup
 
-First create a new Unrea Engine project with version 5.3 or highter. You should make a C++ project to be able to follow this write up.
+First create a new Unreal Engine project with version 5.3 or higher. You should make a C++ project to be able to follow this write up.
 
 Then we need to enable the plugin and add private and public DependencyModuleNames
 
@@ -31,9 +31,9 @@ If we want to work with C++ we should add the Dependencies to the YourProjectNam
 
 Open up the solution with your prefered IDE and navigate to the Build.cs file. This should be located in the root of your project.
 
-Here we add the dependencies.
+[Here](/Source/La_TestEnv/LA_TestEnv.Build.cs) we add the dependencies.
 
-```
+```c#
 PrivateDependencyModuleNames.AddRange(new string[] { "LearningAgentsTraining", "ChaosVehicles" });
 PublicDependencyModuleNames.AddRange(new string[] {  "LearningAgents", "LearningAgentsTraining"  });
 ```
@@ -80,15 +80,18 @@ For this reason i decided to make the managers in blueprint as they are basicly 
 What components do we need for a basic Reinforcement Learning setup?
 
 * An Interactor (Observe Data and Apply Actions)
-* A Trainer
+* A Trainer (Give rewards And Execute Completions)
 * A Policy
 
 I will now go over each Component and explain what it is used for set it up for my use case
 
 
 
+---
 
-### Interactor
+
+
+### [Interactor](Source/LA_TestEnv/Private/LearningAgentsInteractorCar.cpp)
 
 The interactor Component will be used to:
 
@@ -290,12 +293,22 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 }
 ```
 
+---
 
 
 
+### [Trainer](Source/LA_TestEnv/Private/LearningAgentsTrainerCar.cpp)
+
+The trainer is used to set rewards and completions for our neural network. It should:
+
+* Setup Rewards
+* Give Those Rewards
+* Setup When a run is Complete
+* Activate these Completions
+
+---
 
 
-### Trainer
 
 ### Policy
 
