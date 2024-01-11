@@ -79,6 +79,15 @@ For this reason i decided to make the managers in blueprint as they are basicly 
 
 What components do we need for a basic Reinforcement Learning setup?
 
+* An Interactor (Observe Data and Apply Actions)
+* A Trainer
+* A Policy
+
+I will now go over each Component and explain what it is used for set it up for my use case
+
+
+
+
 ### Interactor
 
 The interactor Component will be used to:
@@ -92,15 +101,203 @@ The interactor Component will be used to:
 
 ![AddInteractor.gif](Gifs/AddInteractor.gif)
 
-
 #### Implementing our Interactor
 
 When our component is added to the project. Open it up in your favourite IDE and we will start with overriding the needed functions in the header file.
 
+We will override  the functions that are specified for the above mentioned jobs.
 
-#### Trainer
+```cpp
+	virtual void SetupObservations_Implementation() override;
+	virtual void SetObservations_Implementation(const TArray<int32>& AgentIds) override;
 
-#### Policy
+	virtual void SetupActions_Implementation() override;
+	virtual void GetActions_Implementation(const TArray<int32>& AgentIds) override;
+```
+
+##### SetupObservations_Implementations()
+
+Here we want to setup what our neural network is going to observe in the world, This can be any type of datat we want.
+
+All Possible Observation class can be found in LearningAgentsObservations.cpp
+
+In my case i want to observe the car's:
+
+* Position
+* Direction
+* Angle to the track
+* Velocity
+* Distance from the middle of the track
+
+```cpp
+void ULearningAgentsInteractorCar::SetupObservations_Implementation()
+{
+	Super::SetupObservations_Implementation();
+
+	//Planar Observations
+	CarPositionOnTrackObservation = UPlanarPositionObservation::AddPlanarPositionObservation(this, TEXT("Car Position On Track"));
+	CarDirectionOnTrackObservation = UPlanarDirectionObservation::AddPlanarDirectionObservation(this, TEXT("Car Direction On Track"));
+	TrackGlobalAngleObservation = UAngleObservation::AddAngleObservation(this, TEXT("Track Global Angle"));
+	CarVelocityObservation = UPlanarVelocityObservation::AddPlanarVelocityObservation(this, TEXT("Car Velocity"));
+	CarDistanceToTrackObservation = UFloatObservation::AddFloatObservation(this, TEXT("Car Distance To Track"),1000.f);
+
+	//Helper Observations
+	TrackSplineHelper = USplineComponentHelper::AddSplineComponentHelper(this, TEXT("Track Spline Helper"));
+}
+```
+
+As you can see each observation takes a pointer to the Interactor. Also a TEXT() is passed this is just for debugging.
+
+We can also pass a float to most Observations this will have the name ```scale``` This is used to normailze the data for the observations.
+
+Any helper components that we should need will also be setup here. I would need a ```USplineComponentHelper``` in the future so i also set it up here.
+
+At last we store the created  observations and helpers as private members in our header.
+
+```cpp
+//Observations 
+UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
+UPlanarPositionObservation* CarPositionOnTrackObservation;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
+UPlanarDirectionObservation* CarDirectionOnTrackObservation;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
+UAngleObservation* TrackGlobalAngleObservation;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
+UPlanarVelocityObservation* CarVelocityObservation;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
+UFloatObservation* CarDistanceToTrackObservation;
+
+//Helpers
+UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
+USplineComponentHelper* TrackSplineHelper;
+```
+
+##### SetObservations_Implementation(const TArray<int32>& AgentIds)
+
+In this function we set the values of those obeservations So first we need to make sure we have access to all the data we need to observe.
+
+I would need access to the track so  i made a spline that follows the track. I make a new ```USplineComponent*``` member in the header that we can set in Blueprints later. This will be the pointer to the track spline
+
+```cpp
+UPROPERTY(VisibleDefaultsOnly, Category = "Spline")
+USplineComponent* TrackSpline;
+```
+
+As you can see a TArray<int32>& AgentIdsis passed as parameter. this will be the id for every agent the neural network is training on.
+
+Now that i have access to every piece of data i want to observe i am going to set my observations
+
+```cpp
+void ULearningAgentsInteractorCar::SetObservations_Implementation(const TArray<int32>& AgentIds)
+{
+	Super::SetObservations_Implementation(AgentIds);
+	verify(TrackSpline->IsValidLowLevel())
+
+	for (const int32 AgentId : AgentIds)
+	{
+		//Get the car and check if its valid
+		const AActor* carAgent =  CastChecked<AActor>(GetAgent(AgentId));
+		check(carAgent->IsValidLowLevel())
+		if(!carAgent->IsValidLowLevel()) continue;
+
+		//get data of the car
+		const FVector carLocation = carAgent->GetActorLocation();
+		const FRotator carRotation = carAgent->GetActorRotation();
+		const FVector carVelocity = carAgent->GetVelocity();
+
+		//get data of the spline
+		const float distanceAlongSplineAtPosition = TrackSplineHelper->GetDistanceAlongSplineAtPosition(AgentId, TrackSpline, carLocation);
+		const FVector splineLocationAtDistance = TrackSplineHelper->GetPositionAtDistanceAlongSpline(AgentId, TrackSpline, distanceAlongSplineAtPosition);
+
+		const FVector splineDirectionAtDistance = TrackSplineHelper->GetDirectionAtDistanceAlongSpline(AgentId, TrackSpline, distanceAlongSplineAtPosition);
+
+		const float proportionAlongSplineAsAngle = TrackSplineHelper->GetProportionAlongSplineAsAngle(AgentId, TrackSpline, distanceAlongSplineAtPosition);
+		const FVector nearestSplineLocation = TrackSplineHelper->GetNearestPositionOnSpline(AgentId, TrackSpline, carLocation);
+
+
+		//Set The Actual Observations
+		CarPositionOnTrackObservation->SetPlanarPositionObservation(AgentId, splineLocationAtDistance, carLocation, carRotation);
+		CarDirectionOnTrackObservation->SetPlanarDirectionObservation(AgentId, splineDirectionAtDistance, carRotation);
+		TrackGlobalAngleObservation->SetAngleObservation(AgentId, proportionAlongSplineAsAngle);
+		CarVelocityObservation->SetPlanarVelocityObservation(AgentId, carVelocity);
+		CarDistanceToTrackObservation->SetFloatObservation(AgentId, FVector::Dist(carLocation, nearestSplineLocation));
+	}
+}
+```
+
+##### SetupActions_Implementation()
+
+Now that we have a basic understanding how everything works weh can do the same for the Actions. We can find all possible Actions in LearningAgentsActions.cpp
+
+Storing the actions as members:
+
+```cpp
+//Actions
+UPROPERTY(VisibleDefaultsOnly, Category = "Actions")
+UFloatAction* CarThrottleAction;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Actions")
+UFloatAction* CarBrakeAction;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Actions")
+UFloatAction* SteeringAction;
+```
+
+Now that our header is filed in we can assign the actions.
+
+```cpp
+void ULearningAgentsInteractorCar::SetupActions_Implementation()
+{
+	Super::SetupActions_Implementation();
+
+	CarThrottleAction = UFloatAction::AddFloatAction(this, TEXT("Throttle"), 2.f);
+	CarBrakeAction = UFloatAction::AddFloatAction(this, TEXT("Brake"), 0.1f);
+	SteeringAction = UFloatAction::AddFloatAction(this, TEXT("Steering"), 2.f);
+}
+```
+
+##### SetActions_Implementation(const TArray<int32>& AgentIds)
+
+Now we actually need to perform the actions. The actions will be generated based upon the observations. In my case i waill pass the actions to the VehicleMovementComponent
+
+```cpp
+void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>& AgentIds)
+{
+	Super::GetActions_Implementation(AgentIds);
+	for (const int32 AgentId : AgentIds)
+	{
+		const AActor* carAgent =  CastChecked<AActor>(GetAgent(AgentId));
+		check(carAgent->IsValidLowLevel())
+		if(!carAgent->IsValidLowLevel()) continue;
+
+		const float throttleValue = CarThrottleAction->GetFloatAction(AgentId);
+		const float brakeValue = CarBrakeAction->GetFloatAction(AgentId);
+		const float steeringValue = SteeringAction->GetFloatAction(AgentId);
+
+		//Apply the value's to the movement component of the actor
+		 UChaosVehicleMovementComponent* vehMovementComponent = carAgent->FindComponentByClass<UChaosVehicleMovementComponent>();
+		 check(vehMovementComponent->IsValidLowLevel())
+		 if(!vehMovementComponent->IsValidLowLevel()) continue;
+		 
+                 vehMovementComponent->SetThrottleInput(throttleValue);
+		 vehMovementComponent->SetBrakeInput(brakeValue);
+		 vehMovementComponent->SetSteeringInput(steeringValue);
+	}
+}
+```
+
+
+
+
+
+
+### Trainer
+
+### Policy
 
 My learning environment for testing out Unreal Learning Agents
 As of now i am exploring Reinforcement learning and Imitation Learning.

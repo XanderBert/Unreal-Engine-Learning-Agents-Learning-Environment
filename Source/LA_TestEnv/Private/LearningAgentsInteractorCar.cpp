@@ -74,27 +74,27 @@ void ULearningAgentsInteractorCar::SetObservations_Implementation(const TArray<i
 	
 	for (const int32 AgentId : AgentIds)
 	{
+		//Get the car and check if its valid
 		const AActor* carAgent =  CastChecked<AActor>(GetAgent(AgentId));
 		check(carAgent->IsValidLowLevel())
 		if(!carAgent->IsValidLowLevel()) continue;
-		
+
+		//get data of the car
 		const FVector carLocation = carAgent->GetActorLocation();
 		const FRotator carRotation = carAgent->GetActorRotation();
 		const FVector carVelocity = carAgent->GetVelocity();
-		//UE_LOG(LogTemp, Warning, TEXT("Car Velocity: %s"), *carVelocity.ToString())
-		
+
+		//get data of the spline
 		const float distanceAlongSplineAtPosition = TrackSplineHelper->GetDistanceAlongSplineAtPosition(AgentId, TrackSpline, carLocation);
 		const FVector splineLocationAtDistance = TrackSplineHelper->GetPositionAtDistanceAlongSpline(AgentId, TrackSpline, distanceAlongSplineAtPosition);
 		
-		
 		const FVector splineDirectionAtDistance = TrackSplineHelper->GetDirectionAtDistanceAlongSpline(AgentId, TrackSpline, distanceAlongSplineAtPosition);
-		
 		
 		const float proportionAlongSplineAsAngle = TrackSplineHelper->GetProportionAlongSplineAsAngle(AgentId, TrackSpline, distanceAlongSplineAtPosition);
 		const FVector nearestSplineLocation = TrackSplineHelper->GetNearestPositionOnSpline(AgentId, TrackSpline, carLocation);
 
 		
-		//Set Observations
+		//Set The Actual Observations
 		CarPositionOnTrackObservation->SetPlanarPositionObservation(AgentId, splineLocationAtDistance, carLocation, carRotation);
 		CarDirectionOnTrackObservation->SetPlanarDirectionObservation(AgentId, splineDirectionAtDistance, carRotation);
 		TrackGlobalAngleObservation->SetAngleObservation(AgentId, proportionAlongSplineAsAngle);
@@ -128,8 +128,7 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 		const float throttleValue = CarThrottleAction->GetFloatAction(AgentId);
 		const float brakeValue = CarBrakeAction->GetFloatAction(AgentId);
 		const float steeringValue = SteeringAction->GetFloatAction(AgentId);
-
-		//TODO: these values should be forwarded to the Behavior Tree to take actions upon.
+		
 		CarActions.Throttle = throttleValue;
 		CarActions.Brake = brakeValue;
 		CarActions.Steering = steeringValue;
