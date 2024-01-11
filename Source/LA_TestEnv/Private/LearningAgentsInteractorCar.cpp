@@ -133,8 +133,6 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 		CarActions.Throttle = throttleValue;
 		CarActions.Brake = brakeValue;
 		CarActions.Steering = steeringValue;
-
-	
 		
 		if(bApplyDirectlyToCar)
 		{
