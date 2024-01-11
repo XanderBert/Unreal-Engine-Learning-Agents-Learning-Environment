@@ -1,6 +1,6 @@
 # Unreal Engine 5.3 Learning Agents: How to setup Machine Learning with C++ in Unreal Engine
 
-Unreal Engine released a plugin called Learning Agents. Its still in beta and there arent' many recoures on it yet. So here i am adding my ... to the pot????
+Unreal Engine released a plugin called Learning Agents. Its still in beta and there arent' many recoures on it yet.
 
 Unreal Engine released a [Basic Introduction Tutorial](https://dev.epicgames.com/community/learning/tutorials/qj2O/unreal-engine-learning-to-drive) .This project is building the same project but with C++ and then is exapanding upon this. The tutorial only goes over basic Reinforcement learning with blueprints.
 
@@ -15,7 +15,9 @@ In this write up i will explain how to setup
 
 ## Initial Setup
 
-First we need to enable the plugin and add private and public DependencyModuleNames
+First create a new Unrea Engine project with version 5.3 or highter. You should make a C++ project to be able to follow this write up.
+
+Then we need to enable the plugin and add private and public DependencyModuleNames
 
 ### Enable the plugin
 
@@ -23,19 +25,82 @@ First we need to enable the plugin and add private and public DependencyModuleNa
 
 After Enabeling the plugin you will be prompted to restart Unreal Engine, You should do so.
 
+### Adding Private and Public Dependencies to the project
 
+If we want to work with C++ we should add the Dependencies to the YourProjectName.Build.cs file. This gets generated when you solution is made.
+
+Open up the solution with your prefered IDE and navigate to the Build.cs file. This should be located in the root of your project.
+
+Here we add the dependencies.
 
 ```
-PrivateDependencyModuleNames
+PrivateDependencyModuleNames.AddRange(new string[] { "LearningAgentsTraining", "ChaosVehicles" });
+PublicDependencyModuleNames.AddRange(new string[] {  "LearningAgents", "LearningAgentsTraining"  });
 ```
+
+Note that i also added ChaosVehicles this is used to give the cars input trough c++. If you are not working with the Car template or not using a Vehicle Movement Componet you should not add this.
+
+## Manager Component Layout
+
+This plugin uses a component layout.
+
+You will create a manager for each type of learning or actions you want to do.
+
+The base class of each manager is a ```ALearningAgentsManager``` which is derived from a ```AActor```
+
+Our Manager basicly can hold our ```ULearningAgentsManagerComponent```
+
+Note: These components are derived from a ```UActorComponent``` and not ```USceneComponent```
+
+Altough our components need to be attached to the manager to be able to work (because or manager does not really store the components but our components hold a pointer to our Manager).
+
+```cpp
+void ULearningAgentsManagerComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if (HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))
+	{
+		return;
+	}
+
+	Manager = GetOwner<ALearningAgentsManager>();
+
+	if (!Manager)
+	{
+		UE_LOG(LogLearning, Error, TEXT("%s: Must be attached to a LearningAgentsManager Actor."), *GetName());
+	}
+}
+```
+
+For this reason i decided to make the managers in blueprint as they are basicly emtpy vesels  with minimal setup. That way our C++ componets are attached to it without any big problems.
 
 ## Basic Reinforcement Learning
 
 What components do we need for a basic Reinforcement Learning setup?
 
-1. Policy
-2. Interactor
-3. Trainer
+### Interactor
+
+The interactor Component will be used to:
+
+* Setup Observations
+* Set those Observations
+* Setup Actions
+* Apply those Actions
+
+#### Create the Interactor Component
+
+![AddInteractor.gif](Gifs/AddInteractor.gif)
+
+
+#### Implementing our Interactor
+
+When our component is added to the project. Open it up in your favourite IDE and we will start with overriding the needed functions in the header file.
+
+
+#### Trainer
+
+#### Policy
 
 My learning environment for testing out Unreal Learning Agents
 As of now i am exploring Reinforcement learning and Imitation Learning.
