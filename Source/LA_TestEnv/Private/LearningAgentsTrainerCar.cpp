@@ -67,23 +67,15 @@ void ULearningAgentsTrainerCar::SetRewards_Implementation(const TArray<int32>& A
 		const float distanceToSpline = FVector::Distance(carLocation, closestPointOnSpline);
 		
 
-		
-		//clamp to give a more meaningfull gradient and penalize even more when going further of track
-
 		//The closer from the spline the bigger the reward
 		//When we go over 100.f we start to penalize the agent big time
-		//TODO: the car takes a long time to learn to move forward, Should i increase the velocity reward? Or am i too harch on the distance penalty?
-		const float aVal = UKismetMathLibrary::MapRangeClamped(distanceToSpline, 100.1f, 1800.f, 0.f, -4.5f);
-		const float bVal = UKismetMathLibrary::MapRangeClamped(distanceToSpline, 0.f, 100.f, 1.f, 0.f);
-		const float selectedFloat = UKismetMathLibrary::SelectFloat(aVal, bVal, distanceToSpline >= 100.1f);
+		const float closeReward = UKismetMathLibrary::MapRangeClamped(distanceToSpline, 100.1f, 1800.f, 0.f, -4.5f);
+		const float farReward = UKismetMathLibrary::MapRangeClamped(distanceToSpline, 0.f, 100.f, 1.f, 0.f);
+		const float distanceReward = UKismetMathLibrary::SelectFloat(closeReward, farReward, distanceToSpline >= 100.1f);
 		
 		//Set Rewards
-		DistanceReward->SetFloatReward(AgentId, selectedFloat);
-		//UE_LOG(LogTemp, Warning, TEXT("Distance Reward: %f"), selectedFloat);
-
+		DistanceReward->SetFloatReward(AgentId, distanceReward);
 		VelocityReward->SetScalarVelocityReward(AgentId, velocityAlongSpline);
-		//UE_LOG(LogTemp, Warning, TEXT("Velocity Reward: %f"), velocityAlongSpline);
-		
 	}
 }
 
@@ -119,13 +111,16 @@ void ULearningAgentsTrainerCar::ResetEpisodes_Implementation(const TArray<int32>
 	{
 		AActor* carActor = CastChecked<AActor>(GetAgent(AgentId));
 		check(carActor->IsValidLowLevel())
-
 		
-
 		//Set the car on a random point on the spline.
 		//Why a random point? Because if we always start at the same point, the agent will learn the way the track goes and the learned data will not be flexible enough.
 		FOutputDeviceNull OutputDevice;
 		carActor->CallFunctionByNameWithArguments(TEXT("ResetToRandomPointOnSpline"), OutputDevice, NULL, true);
 	}
 }
+
+
+
+
+
 

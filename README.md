@@ -31,7 +31,7 @@ If we want to work with C++ we should add the Dependencies to the YourProjectNam
 
 Open up the solution with your prefered IDE and navigate to the Build.cs file. This should be located in the root of your project.
 
-[Here](/Source/La_TestEnv/LA_TestEnv.Build.cs) we add the dependencies.
+[Here](/Source/La_TestEnv/LA_TestEnv.Build) we add the dependencies.
 
 ```c#
 PrivateDependencyModuleNames.AddRange(new string[] { "LearningAgentsTraining", "ChaosVehicles" });
@@ -81,15 +81,11 @@ What components do we need for a basic Reinforcement Learning setup?
 
 * An Interactor (Observe Data and Apply Actions)
 * A Trainer (Give rewards And Execute Completions)
-* A Policy
+* A Policy (Decides What the agent does with the given Observations)
 
 I will now go over each Component and explain what it is used for set it up for my use case
 
-
-
 ---
-
-
 
 ### [Interactor](Source/LA_TestEnv/Private/LearningAgentsInteractorCar.cpp)
 
@@ -118,7 +114,7 @@ We will override  the functions that are specified for the above mentioned jobs.
 	virtual void GetActions_Implementation(const TArray<int32>& AgentIds) override;
 ```
 
-##### SetupObservations_Implementations()
+##### Setup Observations
 
 Here we want to setup what our neural network is going to observe in the world, This can be any type of datat we want.
 
@@ -179,7 +175,7 @@ UPROPERTY(VisibleDefaultsOnly, Category = "Observations")
 USplineComponentHelper* TrackSplineHelper;
 ```
 
-##### SetObservations_Implementation(const TArray<int32>& AgentIds)
+##### Set Observations
 
 In this function we set the values of those obeservations So first we need to make sure we have access to all the data we need to observe.
 
@@ -232,7 +228,7 @@ void ULearningAgentsInteractorCar::SetObservations_Implementation(const TArray<i
 }
 ```
 
-##### SetupActions_Implementation()
+##### Setup Actions
 
 Now that we have a basic understanding how everything works weh can do the same for the Actions. We can find all possible Actions in LearningAgentsActions.cpp
 
@@ -263,7 +259,7 @@ void ULearningAgentsInteractorCar::SetupActions_Implementation()
 }
 ```
 
-##### SetActions_Implementation(const TArray<int32>& AgentIds)
+##### Set Actions
 
 Now we actually need to perform the actions. The actions will be generated based upon the observations. In my case i waill pass the actions to the VehicleMovementComponent
 
@@ -295,8 +291,6 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 
 ---
 
-
-
 ### [Trainer](Source/LA_TestEnv/Private/LearningAgentsTrainerCar.cpp)
 
 The trainer is used to set rewards and completions for our neural network. It should:
@@ -306,11 +300,206 @@ The trainer is used to set rewards and completions for our neural network. It sh
 * Setup When a run is Complete
 * Activate these Completions
 
+#### Create the Trainer Component
+
+![CreateTrainer.gif](Gifs/CreateTrainer.gif)
+
+#### Implementing our Trainer
+
+We will override these functions to set rewards, completions and to reset an agent
+
+```cpp
+virtual void SetupRewards_Implementation() override;
+virtual void SetRewards_Implementation(const TArray<int32>& AgentIds) override;
+
+virtual void SetupCompletions_Implementation() override;
+virtual void SetCompletions_Implementation(const TArray<int32>& AgentIds) override;
+
+virtual void ResetEpisodes_Implementation(const TArray<int32>& AgentIds) override;
+```
+
+##### Setup Rewards
+
+Here we decide how the agent can get 'points' In my case i will give him points for Velocity and how far he is from the spline. Speaking of the spline i will probably will need a 'USplineComponentHelper'
+
+Again All our Rewards are stored in 1 file: ```LearningAgentsRewards.cpp```
+
+First we make the members:
+
+```cpp
+//Helpers
+UPROPERTY(VisibleDefaultsOnly, Category = "Spline")
+USplineComponentHelper* TrackSplineHelper;
+
+//Rewards
+UPROPERTY(VisibleDefaultsOnly, Category = "Rewards")
+UScalarVelocityReward* VelocityReward;
+
+UPROPERTY(VisibleDefaultsOnly, Category = "Rewards")
+UFloatReward* DistanceReward;
+```
+
+Then we Setup those rewards:
+
+```cpp
+void ULearningAgentsTrainerCar::SetupRewards_Implementation()
+{
+	Super::SetupRewards_Implementation();
+
+	TrackSplineHelper = USplineComponentHelper::AddSplineComponentHelper(this, TEXT("Track Spline Helper"));
+
+	//Rewards
+	VelocityReward = UScalarVelocityReward::AddScalarVelocityReward(this, TEXT("Velocity Reward"));
+	DistanceReward = UFloatReward::AddFloatReward(this, TEXT("Distance Reward"), 1.f);
+}
+```
+
+##### Set Rewards
+
+Now we will decide when we give Rewards/Penaltys and how big those are
+
+```cpp
+void ULearningAgentsTrainerCar::SetRewards_Implementation(const TArray<int32>& AgentIds)
+{
+	Super::SetRewards_Implementation(AgentIds);
+
+	for (const int32 AgentId : AgentIds)
+	{
+		const AActor* carActor = CastChecked<AActor>(GetAgent(AgentId));
+		check(carActor->IsValidLowLevel())
+
+		const FVector carVelocity = carActor->GetVelocity();
+		const FVector carLocation = carActor->GetActorLocation();
+
+		const float velocityAlongSpline = TrackSplineHelper->GetVelocityAlongSpline(AgentId, TrackSpline, carLocation, carVelocity);
+		const FVector closestPointOnSpline = TrackSplineHelper->GetNearestPositionOnSpline(AgentId, TrackSpline, carLocation);
+		const float distanceToSpline = FVector::Distance(carLocation, closestPointOnSpline);
+
+
+		//The closer from the spline the bigger the reward
+		//When we go over 100.f we start to penalize the agent big time
+		const float closeReward = UKismetMathLibrary::MapRangeClamped(distanceToSpline, 100.1f, 1800.f, 0.f, -4.5f);
+		const float farReward = UKismetMathLibrary::MapRangeClamped(distanceToSpline, 0.f, 100.f, 1.f, 0.f);
+		const float distanceReward = UKismetMathLibrary::SelectFloat(closeReward, farReward, distanceToSpline >= 100.1f);
+
+		//Set Rewards
+		DistanceReward->SetFloatReward(AgentId, distanceReward);
+		VelocityReward->SetScalarVelocityReward(AgentId, velocityAlongSpline);
+	}
+}
+```
+
+##### Setup Completions
+
+Here we dicide the condition for the the agent to be "reset".
+
+All Completion types can be found in ```LearningAgentsCompletions.cpp```
+
+Again we store this as a member to use later
+
+```cpp
+	//Completions
+	UPROPERTY(VisibleDefaultsOnly, Category = "Completions")
+	UPlanarPositionDifferenceCompletion* OffTrackCompletion;
+```
+
+Now th actual implementation. In my case it will be a simple distance. When the distance between points is bigger then 1200.f the Resetting will fire.
+
+```cpp
+void ULearningAgentsTrainerCar::SetupCompletions_Implementation()
+{
+	Super::SetupCompletions_Implementation();
+	OffTrackCompletion = UPlanarPositionDifferenceCompletion::AddPlanarPositionDifferenceCompletion(this, TEXT("Off Track Completion"),1200.f);
+}
+```
+
+##### Set Completions
+
+Here we will set the value the completion should have. In my cast the 2 points.
+
+```cpp
+void ULearningAgentsTrainerCar::SetCompletions_Implementation(const TArray<int32>& AgentIds)
+{
+	Super::SetCompletions_Implementation(AgentIds);
+
+	for (const int32 AgentId : AgentIds)
+	{
+		const AActor* carActor = CastChecked<AActor>(GetAgent(AgentId));
+		check(carActor->IsValidLowLevel())
+
+		const FVector carLocation = carActor->GetActorLocation();
+		const FVector closestPointOnSpline = TrackSplineHelper->GetNearestPositionOnSpline(AgentId, TrackSpline, carLocation);
+
+		//Set Completions
+		OffTrackCompletion->SetPlanarPositionDifferenceCompletion(AgentId, closestPointOnSpline, carLocation);
+	}
+}
+```
+
+##### Reset
+
+Now the last step of the Trainer is the resetting of the agents when the Completion is met.
+
+So for when the car is going offtrack i will place it on a random point on the track.
+
+I use the allready made car blueprint from unreal engine self so i made the function in blueprints. I just call it here in c++ (I don't recommenddoing this! It is for demo purposes only)
+
+```cpp
+void ULearningAgentsTrainerCar::ResetEpisodes_Implementation(const TArray<int32>& AgentIds)
+{
+	Super::ResetEpisodes_Implementation(AgentIds);
+
+	for (const int32 AgentId : AgentIds)
+	{
+		AActor* carActor = CastChecked<AActor>(GetAgent(AgentId));
+		check(carActor->IsValidLowLevel())
+
+		//Set the car on a random point on the spline.
+		//Why a random point? Because if we always start at the same point, the agent will learn the way the track goes and the learned data will not be flexible enough.
+		FOutputDeviceNull OutputDevice;
+		carActor->CallFunctionByNameWithArguments(TEXT("ResetToRandomPointOnSpline"), OutputDevice, NULL, true);
+	}
+}
+```
+
 ---
 
-
-
 ### Policy
+
+A Policy decides what the agent does. It also adds 'noise'. That's a fancy term for it just tries out things and checks if the reward was greater then before.
+
+We don't need to setup this component and only give it some settings in the manager so we can do that in blueprints.
+
+#### Creating the Policy Component
+
+![CreatePolicy.gif](Gifs/CreatePolicy.gif)
+
+---
+
+## Setup The Reinforcement Learning Manager
+
+The bigest bit of setup is now done. In our manager we just need to register our made components and thats about it for the manager.
+
+1. Create the manager![CreateBasicManager.gif](Gifs/CreateBasicManager.gif)
+2. Set the number of agents we want to use and Add the components
+   ![SetNumberAndAddComponents.gif](Gifs/SetNumberAndAddComponents.gif)
+3. Initialize the components
+4. Run the training
+
+
+
+## Register The Agent
+
+
+## Create a Neural Network Data Type
+
+
+
+
+
+
+
+
 
 My learning environment for testing out Unreal Learning Agents
 As of now i am exploring Reinforcement learning and Imitation Learning.

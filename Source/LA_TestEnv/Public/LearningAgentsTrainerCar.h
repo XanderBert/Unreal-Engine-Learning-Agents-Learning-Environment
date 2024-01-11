@@ -38,6 +38,7 @@ private:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Spline")
 	USplineComponent* TrackSpline;
 
+	//Helpers
 	UPROPERTY(VisibleDefaultsOnly, Category = "Spline")
 	USplineComponentHelper* TrackSplineHelper;
 
