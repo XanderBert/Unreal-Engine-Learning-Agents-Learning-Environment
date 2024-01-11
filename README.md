@@ -13,6 +13,29 @@ In this write up i will explain how to setup
   * Deploying the recorded network
 * Combine the neural networks with a behavior tree  to combine best of both worlds
 
+---
+
+
+
+## Table of Contents
+
+- [Initial Setup](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#initial-setup)
+- [Manager Component Layout](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#manager-component-layout)
+- [Basic Reinforcement Learning](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#basic-reinforcement-learning)
+  - [Interactor](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#interactor)
+  - [Trainer](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#trainer)
+  - [Policy](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#policy)
+  - [Setup The Reinforcement Learning Manager](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setup-the-reinforcement-learning-manager)
+  - [Registering The Agents](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#register-the-agents)
+  - [Create A Neural Netork Asset](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#create-a-neural-network-data-type)
+- Basic Imitation Learning
+  - Recorder
+  -
+
+---
+
+
+
 ## Initial Setup
 
 First create a new Unreal Engine project with version 5.3 or higher. You should make a C++ project to be able to follow this write up.
@@ -476,7 +499,7 @@ We don't need to setup this component and only give it some settings in the mana
 
 ---
 
-## Setup The Reinforcement Learning Manager
+### Setup The Reinforcement Learning Manager
 
 The bigest bit of setup is now done. In our manager we just need to register our made components and thats about it for the manager.
 
@@ -489,7 +512,7 @@ The bigest bit of setup is now done. In our manager we just need to register our
    Also for now we don't select a neural network asset for the Policy I will cover this a bit later in this write up.
    I will also come back to talk about the Run Training settings.
 
-## Register The Agents
+### Register The Agents
 
 Now with this all setup we want our agents to be registered to our manager. In this demo i did set the Agent Max Num to 32 as shown in step 2 of setting up the manager. You can expiriment with this as you like.
 
@@ -498,7 +521,7 @@ Now with this all setup we want our agents to be registered to our manager. In t
    ![AddAgentToManager.gif](Gifs/AddAgentToManager.gif)
 3. Drag the agent blueprint into the level, You can drag as many in the world as you set the limit in the manager (if you spawn more they just won't be registered in the manager)
 
-## Create a Neural Network Data Type
+### Create a Neural Network Data Type
 
 Last step in setting up Reinforcement Learning is creating the Neural Network and setting as our network asset in the policy inside our manager.
 
