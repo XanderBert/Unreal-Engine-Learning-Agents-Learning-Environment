@@ -15,8 +15,6 @@ In this write up i will explain how to setup
 
 ---
 
-
-
 ## Table of Contents
 
 - [Initial Setup](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#initial-setup)
@@ -33,8 +31,6 @@ In this write up i will explain how to setup
   -
 
 ---
-
-
 
 ## Initial Setup
 
@@ -511,6 +507,13 @@ The bigest bit of setup is now done. In our manager we just need to register our
    As you can see we just call Setup for every component. and promote the settings as a member variable.
    Also for now we don't select a neural network asset for the Policy I will cover this a bit later in this write up.
    I will also come back to talk about the Run Training settings.
+4. Set the tick.
+
+   Now at last we only set the tick interval of the manager. This just means what is the interval for the observations.
+
+   We can find this under the manager class defaults, Its right above where we have set the Max Agent Num. In my case i set it to 0.1. If you set it this number too small you will start to get odd behaviour. because the actions and observations will not be "smoothed".
+
+   If you set it too high it will look like somebody playing  with a hight ping.
 
 ### Register The Agents
 
@@ -528,3 +531,37 @@ Last step in setting up Reinforcement Learning is creating the Neural Network an
 1. Create the Neural Network Data Type
    ![CreateNeuralNetworkAsset.gif](Gifs/CreateNeuralNetworkAsset.gif)
 2. Select the asset in our manager for our policy
+
+---
+
+## Basic Imitation learning
+
+What is the difference between reinforcement learning and Imitation learning?
+
+With Imitation learning we will "record" what actions give what results. In most cases this just means record what a actual human does. But this can aswel be recording an allready trained neural network or recording an actor that is working with a behaviour tree.
+
+When we recorded all the actions we will we wil train a neural network with the recorded behavour. Basicly giving it a really big push to where it should go. And with reinforcement leaning the network needs to figure out himself towards which direciton it should go to rack up points.
+
+### Recorder Manager
+
+First we would want to record
+
+#### Interactor Component
+
+allready made one
+
+#### Recorder Component
+
+nothing
+
+#### Controller Component
+
+nothing
+
+#### Setup The Imitation Learning Manager
+
+Set the record duration, Numeber of agents, and a tick interval
+
+#### Recording Asset
+
+### Inference Manager
