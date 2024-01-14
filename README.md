@@ -55,7 +55,7 @@ If we want to work with C++ we should add the Dependencies to the YourProjectNam
 
 Open up the solution with your prefered IDE and navigate to the Build.cs file. This should be located in the root of your project.
 
-[Here](/Source/La_TestEnv/LA_TestEnv.Build.cs) we add the dependencies.
+[Here](/Source/LA_TestEnv.Build.cs) we add the dependencies.
 
 ```c#
 PrivateDependencyModuleNames.AddRange(new string[] { "LearningAgentsTraining", "ChaosVehicles" });
