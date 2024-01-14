@@ -74,7 +74,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
 	bool GetApplyDirectlyToCar() const { return bApplyDirectlyToCar; }
 
-	
+	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	void SetApplyDirectlyToCar(bool bNewApplyDirectlyToCar) { bApplyDirectlyToCar = bNewApplyDirectlyToCar; }	
 
 	
 protected:

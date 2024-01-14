@@ -33,7 +33,7 @@ In this write up i will explain how to setup
     - [Controller](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#controller-component)
     - [Setup The Record Manager](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setup-record-manager)
     - [Recording Asset](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#recording-asset)
-  - [Inference Manger](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#inference-manager)
+  - [Imitation Manger](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#inference-manager)
 
 ---
 
@@ -654,6 +654,55 @@ Now we just have to create a record asset, and select it in our manager.
 
 That's it, Remove the Reinforcement learning manager out of the level, and add this one. Don't forget to edit the agent, now it still gets the Reinforcement Learning manger, Change that to the Record manager.
 
-When this is done we can just play as an agent and it records what we are doing to learn from later.
+When this is done we can just play as an agent and it records what we are doing to learn from later. Make sure you have a nice big data set.
+
+### Imitation Manager
+
+With this class we will create a actual neural network from our recordings. The setup of this class is pretty straightforward.
+
+So again we create a new empty manager.
+
+1. Imitation Trainer Component
+   This component just needs to be created and added to the new manager
+   It will train the neural network form our recordings.
+2. Policy Component
+   We can reuse the existing policy
+3. Interactor Component
+   The same for the interactor. We add our allready made interactor to the manager
+
+#### Setting up the Imitation Manager
+
+1. Set the tick interval and the MaxAgentNum in the class defaults
+   This is the same as we have done it a few times allready.
+2. Setup the components
+   ![SetupImitationManager.gif](Gifs/SetupImitationManager.gif)
+3. Run The Training
+
+![RunImitationTraining.gif](Gifs/RunImitationTraining.gif)
+
+We need to select our recording here. Make sure you first have recorded a nice big data set.
+
+We will reinitialize our policy to make sure we start from a clean slate as this will produce better results.
+
+Also in the Imitation training trainer settings we will reduce the number of itterations. This is to prevent overfitting. You should test out this number for your application offcourse.
+
+Overfitting you say? What is overfitting
+
+in basic terms, the agent will have trained too much on the given recording and will work good in the same environment that the data was recorded in. But it will have a really hard time learning new concepts or adapt to slightly different situations.
+
+We can also set a timer for the training to stop after a certain amount of time if we want to.
+
+This is it for our Imitation manager, We again update our agent to register to this manager and we let it run.
+
 
 ### Inference Manager
+
+(usaually after imitation learning you would run Reinforcement learning to further train the network before we use it)
+
+Now the last thing we need to do is actual put the trained result to test. We create on last manager set up the tick and the max agent num.
+
+and give it our policy and Interactor component.
+
+![InferenceManager.png](Gifs/InferenceManager.png)
+
+We change our agent again to be added to this new manager and thats it we can now see the trained network put to work.
