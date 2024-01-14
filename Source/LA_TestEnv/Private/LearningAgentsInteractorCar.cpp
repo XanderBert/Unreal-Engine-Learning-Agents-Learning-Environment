@@ -146,3 +146,26 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 		}
 	}
 }
+
+void ULearningAgentsInteractorCar::SetActions(TSubclassOf<UObject> agentClass)
+{
+	TArray<UObject*> OutAgents{};
+	TArray<int32> OutAgentIds{};
+	GetAllAgents(OutAgents, OutAgentIds, agentClass);
+
+	for (const int32 AgentId : OutAgentIds)
+	{
+		const AActor* carAgent =  CastChecked<AActor>(GetAgent(AgentId));
+		check(carAgent->IsValidLowLevel())
+		if(!carAgent->IsValidLowLevel()) continue;
+
+		//Get the input that was giving to the car
+		 UChaosVehicleMovementComponent* vehMovementComponent = carAgent->FindComponentByClass<UChaosVehicleMovementComponent>();
+		 check(vehMovementComponent->IsValidLowLevel())
+		 if(!vehMovementComponent->IsValidLowLevel()) continue;
+
+		CarThrottleAction->SetFloatAction(AgentId, vehMovementComponent->GetThrottleInput());
+		CarBrakeAction->SetFloatAction(AgentId, vehMovementComponent->GetBrakeInput());
+		SteeringAction->SetFloatAction(AgentId, vehMovementComponent->GetSteeringInput());
+	}
+}

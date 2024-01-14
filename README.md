@@ -27,8 +27,13 @@ In this write up i will explain how to setup
   - [Registering The Agents](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#register-the-agents)
   - [Create A Neural Netork Asset](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#create-a-neural-network-data-type)
 - Basic Imitation Learning
-  - Recorder
-  -
+  - Recorder Manager
+    - Interactor
+    - Recorder
+    - Controller
+    - Setup The Record Manager
+    - Recording Asset
+  - Inference Manger
 
 ---
 
@@ -544,24 +549,111 @@ When we recorded all the actions we will we wil train a neural network with the 
 
 ### Recorder Manager
 
-First we would want to record
+First we would want to record a nice big data set. This is done with the record manager. From now on we can really recycle components as most of the things are set up. We would need a:
+
+* Interactor (reusable)
+* Recorder
+* Controller
 
 #### Interactor Component
 
-allready made one
+First of our interactor component. We can use the same interactor that we allready made so nothing more to do here.
 
 #### Recorder Component
 
-nothing
+We just need to create the component for a basic setup. I won't go over how to create it as its eplained for the other components above.
+
+our recorder component will record our Actions and Observations and store that to a Record asset.
+
+Offcourse we can much more with this component then its basic use case. for eample We can Save the recording to a file.  append it to an e   isting recording and so forth.
 
 #### Controller Component
 
-nothing
+As with the recorder, Its the same for our controller, We just need to create one.
 
-#### Setup The Imitation Learning Manager
+The Controller component is used for "injecting" our set actions into the system. So we just use it for encoding our actions. Nothing more.
 
-Set the record duration, Numeber of agents, and a tick interval
+#### Setup Record Manager
+
+First we create a new Manager (just another blueprint of base class ```Learning Agents Manager```)
+
+Then we add our created components (Interactor, Recorder and Controller).
+
+With this setup we can open the manager and:
+
+1. Set the Max Agent Num and Tick interval
+   ![SetTickAndAgentNumber.gif](Gifs/SetTickAndAgentNumber.gif)
+2. Setup the components
+   ![SetupRecordComponents.gif](Gifs/SetupRecordComponents.gif)
+   As you can see we dont give it a Recording asset, We will create it later and then come back to the manager to select it.
+3. Start a Recording loop
+   ![SetupRecordLoop.gif](Gifs/SetupRecordLoop.gif)
+   We create a variable for how long we want to record for. and just wait that amount of time to end our recording.
+   Note: When we stop playing the latest recording won't be lost because EndRecording wasn't called. When we stop playing the Record Component will call it before closing the game.
+   Also When calling BeginRecording we want to disable Reinitialize Recording. Otherwise it will wipe out all our previous recordings if any were allready made.
+4. Set the actions
+   Now we want to set the actions for our interactor (Because our neural network does not do it now, We do it).
+   For this we create a new function in our interactor component
+
+   Header:
+
+   ```cpp
+   	UFUNCTION(BlueprintCallable, Category = "Actions")
+   	void SetActions(TSubclassOf<UObject> agentClass);
+   ```
+
+   Implementation:
+
+   ```cpp
+   void ULearningAgentsInteractorCar::SetActions(TSubclassOf<UObject> agentClass)
+   {
+   	TArray<UObject*> OutAgents{};
+   	TArray<int32> OutAgentIds{};
+   	GetAllAgents(OutAgents, OutAgentIds, agentClass);
+
+   	for (const int32 AgentId : OutAgentIds)
+   	{
+   		const AActor* carAgent =  CastChecked<AActor>(GetAgent(AgentId));
+   		check(carAgent->IsValidLowLevel())
+   		if(!carAgent->IsValidLowLevel()) continue;
+
+   		//Get the input that was giving to the car
+   		 UChaosVehicleMovementComponent* vehMovementComponent = carAgent->FindComponentByClass<UChaosVehicleMovementComponent>();
+   		 check(vehMovementComponent->IsValidLowLevel())
+   		 if(!vehMovementComponent->IsValidLowLevel()) continue;
+
+   		CarThrottleAction->SetFloatAction(AgentId, vehMovementComponent->GetThrottleInput());
+   		CarBrakeAction->SetFloatAction(AgentId, vehMovementComponent->GetBrakeInput());
+   		SteeringAction->SetFloatAction(AgentId, vehMovementComponent->GetSteeringInput());
+   	}
+   }
+   ```
+
+   In this function we get all the agents of the selected class, Go over them get the giving input ad set that as the action. (basicly setting the neural networks output)
+
+   Now we can call this in our manager.
+
+   ![SetActionsInManager.gif](Gifs/SetActionsInManager.gif)
+5. Encode and Add Experience
+
+   Now we will Encode our Observations, Actions and add Exerience
+
+   Observations: When encoding our observations, we just gather all the observations made and call the SetObservations function.
+
+   Actions: This sets our actions (That we have set in our Interactor) in our controller.
+
+   Experience: This will take the Actions and Observations and place it in the recording buffer (all our experiences will be add up until a recoding is ended to make 1 recording entry).
+
+   ![EncodeAndAddExperience.gif](Gifs/EncodeAndAddExperience.gif)
 
 #### Recording Asset
+
+Now we just have to create a record asset, and select it in our manager.
+
+![CreateRecordAsset.gif](Gifs/CreateRecordAsset.gif?t=1705237300898)
+
+That's it, Remove the Reinforcement learning manager out of the level, and add this one. Don't forget to edit the agent, now it still gets the Reinforcement Learning manger, Change that to the Record manager.
+
+When this is done we can just play as an agent and it records what we are doing to learn from later.
 
 ### Inference Manager

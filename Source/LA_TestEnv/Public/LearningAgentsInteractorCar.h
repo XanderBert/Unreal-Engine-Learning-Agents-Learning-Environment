@@ -48,16 +48,34 @@ public:
 	
 	virtual void SetupActions_Implementation() override;
 	virtual void GetActions_Implementation(const TArray<int32>& AgentIds) override;
+		
+
 
 	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
 	USplineComponentHelper* GetTrackSplineHelper() const { return TrackSplineHelper; }
 
-
-	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	void SetActions(TSubclassOf<UObject> agentClass);
+	
+	UFUNCTION(BlueprintCallable, Category = "Actions")
 	FCarActions& GetCarActions() { return CarActions; }
 
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	UFloatAction* GetCarThrottleAction() const { return CarThrottleAction; }
+
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	UFloatAction* GetCarBrakeAction() const { return CarBrakeAction; }
+
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	UFloatAction* GetSteeringAction() const { return SteeringAction; }
+
+
+	
 	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
 	bool GetApplyDirectlyToCar() const { return bApplyDirectlyToCar; }
+
+	
+
 	
 protected:
 	// Called when the game starts
