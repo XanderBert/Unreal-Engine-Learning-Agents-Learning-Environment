@@ -26,14 +26,14 @@ In this write up i will explain how to setup
   - [Setup The Reinforcement Learning Manager](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setup-the-reinforcement-learning-manager)
   - [Registering The Agents](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#register-the-agents)
   - [Create A Neural Netork Asset](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#create-a-neural-network-data-type)
-- Basic Imitation Learning
-  - Recorder Manager
-    - Interactor
-    - Recorder
-    - Controller
-    - Setup The Record Manager
-    - Recording Asset
-  - Inference Manger
+- [Basic Imitation Learning](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#basic-imitation-learning)
+  - [Recorder Manager](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#recorder-manager)
+    - [Interactor](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#interactor-component)
+    - [Recorder](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#recorder-component)
+    - [Controller](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#controller-component)
+    - [Setup The Record Manager](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setup-record-manager)
+    - [Recording Asset](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#recording-asset)
+  - [Inference Manger](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#inference-manager)
 
 ---
 
@@ -55,7 +55,7 @@ If we want to work with C++ we should add the Dependencies to the YourProjectNam
 
 Open up the solution with your prefered IDE and navigate to the Build.cs file. This should be located in the root of your project.
 
-[Here](/Source/La_TestEnv/LA_TestEnv.Build) we add the dependencies.
+[Here](/Source/La_TestEnv/LA_TestEnv.Build.cs) we add the dependencies.
 
 ```c#
 PrivateDependencyModuleNames.AddRange(new string[] { "LearningAgentsTraining", "ChaosVehicles" });
