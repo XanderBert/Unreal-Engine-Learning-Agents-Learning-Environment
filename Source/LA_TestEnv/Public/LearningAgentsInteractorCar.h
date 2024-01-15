@@ -68,8 +68,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Actions")
 	UFloatAction* GetSteeringAction() const { return SteeringAction; }
-
-
 	
 	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
 	bool GetApplyDirectlyToCar() const { return bApplyDirectlyToCar; }

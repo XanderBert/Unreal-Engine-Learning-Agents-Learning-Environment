@@ -694,7 +694,6 @@ We can also set a timer for the training to stop after a certain amount of time 
 
 This is it for our Imitation manager, We again update our agent to register to this manager and we let it run.
 
-
 ### Inference Manager
 
 (usaually after imitation learning you would run Reinforcement learning to further train the network before we use it)
@@ -706,3 +705,142 @@ and give it our policy and Interactor component.
 ![InferenceManager.png](Gifs/InferenceManager.png)
 
 We change our agent again to be added to this new manager and thats it we can now see the trained network put to work.
+
+## Passing the action values to a Behavior Tree.
+
+What if we want to have more control over what is being done?  The Behavior Tree comes to the rescue.
+
+Litterly any setup with the behaviour tree is possible: Do we want our neural network to steer the actions of the tree? it can! Do we want our behaviour tree to decide when to use the actions of the neural network? guess what! it can be done!
+
+I will demonstrate the latter in this project.
+
+### Changing our Interactor Component
+
+Some things will  need to be modified in order for this setup to work. First we will look at our interactor component. As the GetActions function now directly applies the actions to our MovementComponent.
+
+For ease of use i will define a struct that holds all our generated action values.
+
+```cpp
+USTRUCT(BlueprintType, Blueprintable )
+struct FCarActions
+{
+	GENERATED_BODY()
+
+	FCarActions() : Throttle(0.f), Brake(0.f), Steering(0.f) {}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actions")
+	float Throttle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actions")
+	float Brake;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Actions")
+	float Steering;
+};
+```
+
+Now we can add a bool that dictates if the actions are directly applied or not and we will use the struct to fill in our actions.
+
+Additions to the Interactor Header:
+
+```cpp
+public:
+	UFUNCTION(BlueprintCallable, Category = "Actions")
+	UFloatAction* GetSteeringAction() const { return SteeringAction; }
+
+	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	bool GetApplyDirectlyToCar() const { return bApplyDirectlyToCar; }
+
+	UFUNCTION(BlueprintCallable, Category = "Learning Agents")
+	void SetApplyDirectlyToCar(bool bNewApplyDirectlyToCar) { bApplyDirectlyToCar = bNewApplyDirectlyToCar; }
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Actions")
+	FCarActions CarActions{};
+
+	UPROPERTY(EditAnywhere, Category = "Actions")
+	bool bApplyDirectlyToCar = true;
+```
+
+Changes to the Interactor's  GetActions_Implementation
+
+```cpp
+void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>& AgentIds)
+{
+	Super::GetActions_Implementation(AgentIds);
+	for (const int32 AgentId : AgentIds)
+	{
+		const AActor* carAgent =  CastChecked<AActor>(GetAgent(AgentId));
+		check(carAgent->IsValidLowLevel())
+		if(!carAgent->IsValidLowLevel()) continue;
+
+		CarActions.Throttle = CarThrottleAction->GetFloatAction(AgentId);
+		CarActions.Brake = CarBrakeAction->GetFloatAction(AgentId);
+		CarActions.Steering = SteeringAction->GetFloatAction(AgentId);
+
+		if(bApplyDirectlyToCar)
+		{
+			//Apply the value's to the movement component of the actor
+			 UChaosVehicleMovementComponent* vehMovementComponent = carAgent->FindComponentByClass<UChaosVehicleMovementComponent>();
+			 check(vehMovementComponent->IsValidLowLevel())
+			 if(!vehMovementComponent->IsValidLowLevel()) continue;
+
+			vehMovementComponent->SetThrottleInput(CarActions.Throttle);
+			vehMovementComponent->SetBrakeInput(CarActions.Brake);
+			vehMovementComponent->SetSteeringInput(CarActions.Steering);
+		}
+	}
+}
+```
+
+Here we just stored the actions values in our new struct and only apply them if the bool is set to true.
+
+### Setup the Behavior Tree
+
+
+
+
+
+1. Create a Behaviour Tree and Blackboard
+   ![CreateBehaviorTree.gif](Gifs/CreateBehaviorTree.gif)
+2. Fill in the blackboard keys
+   ![BlackBoardKeys.png](Gifs/BlackBoardKeys.png)
+3. Create a AI Controller (Will send the behavior tree actions to the car to perform)
+   ![CreateAIController.gif](Gifs/CreateAIController.gif)
+4. Set the Behaviour tree and fill in the blackbaord data.
+   Open up the created Ai controller and now we are going to set it up to work with the behavior tree.
+   I've created a link to the blueprint as this is a bit more setup in blueprints. You can find it [here](https://blueprintue.com/blueprint/7gevks19/), you will be able to zoom in and copy the blueprints
+   ![SetupAiController.png](Gifs/SetupAiController.png)
+   Basicly we call Run Behavior Tree and give it our made behavior tree as parameter, then we fill in our blackboard keys.
+5. Select our the ai controller in the agent and setup our agent
+
+   - We Store the manager and its interactor component On Begin Play
+   - We Store the actions and update them on tick. (We cant take a pointer to the custom struct  due to unreal reasons)
+   - Select the custom Ai Controller for the car
+     ![UpdateCar.gif](Gifs/UpdateCar.gif)
+6. Change our Inference Manager
+
+   ![UpdateInference.gif](Gifs/UpdateInference.gif?)
+
+   We Expose a bool to use the behavoir tree or not and set in the interactor.
+7. Setup our Behaviour Tree
+
+   Now we just check if the the behaviour tree should be used and set the conditions when to do an action
+
+   I will not explain how every task and decorator is setup but if you want you can take a look in the project! Thats why its here :)
+
+   In basic terms we check if the car needs to be turn, and if so we let the neural network take over and apply its actions to the movement component.
+
+   ![BehaviorTree.png](Gifs/BehaviorTree.png)
+   ![SetSteeringAction.png](Gifs/SetSteeringAction.png)
+
+Thats it, Now we just set use Behavior tree to true in our manager and voila the neural network only gets used when we actually decide when we want to steer.
+
+## The Neural Network and the Behavior Tree in Action
+
+![Running1.gif](Gifs/Running1.gif)
+
+## Why would we use a behavior tree in the first place?
+
+A behavior tree is really good ad deciding WHEN an action should occur or anything "hardcoded" think a wandering radius.
+
+We don't want to setup a neural network to learn a wandering readius? we just set a wandering radius. For things like this the combination fits perfectly.

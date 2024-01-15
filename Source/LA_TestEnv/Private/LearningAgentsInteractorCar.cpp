@@ -125,14 +125,10 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 		check(carAgent->IsValidLowLevel())
 		if(!carAgent->IsValidLowLevel()) continue;
 
-		const float throttleValue = CarThrottleAction->GetFloatAction(AgentId);
-		const float brakeValue = CarBrakeAction->GetFloatAction(AgentId);
-		const float steeringValue = SteeringAction->GetFloatAction(AgentId);
-		
-		CarActions.Throttle = throttleValue;
-		CarActions.Brake = brakeValue;
-		CarActions.Steering = steeringValue;
-		
+		CarActions.Throttle = CarThrottleAction->GetFloatAction(AgentId);
+		CarActions.Brake = CarBrakeAction->GetFloatAction(AgentId);
+		CarActions.Steering = SteeringAction->GetFloatAction(AgentId);
+				
 		if(bApplyDirectlyToCar)
 		{
 			//Apply the value's to the movement component of the actor
