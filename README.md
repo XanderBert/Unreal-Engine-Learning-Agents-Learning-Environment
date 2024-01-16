@@ -9,8 +9,8 @@ In this write up i will explain how to setup
 * Basic Reinforcement learning with c++
 * Imitation learning
   * Recording
-  * Inference
-  * Deploying the recorded network
+  * Imitation Training
+* Deploying the recorded network
 * Combine the neural networks with a behavior tree  to combine best of both worlds
 
 ---
@@ -33,7 +33,14 @@ In this write up i will explain how to setup
     - [Controller](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#controller-component)
     - [Setup The Record Manager](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setup-record-manager)
     - [Recording Asset](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#recording-asset)
-  - [Imitation Manger](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#inference-manager)
+  - [Imitation Manger](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#imitation-manager)
+    - [Setup](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setting-up-the-imitation-manager)
+- [Deploying the Neural Network](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#inference-manager)
+- [Combine with a Behavior Tree](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#passing-the-action-values-to-a-behavior-tree)
+  - [Update our Interactor](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#changing-our-interactor-component)
+  - [Setup the behavior Tree](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#setup-the-behavior-tree)
+- [Everything in Action](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#the-neural-network-and-the-behavior-tree-in-action)
+- [Conclusion](https://github.com/XanderBert/Unreal-Engine-Learning-Agents-Learning-Environment?tab=readme-ov-file#conclusion)
 
 ---
 
@@ -835,7 +842,9 @@ Thats it, Now we just set use Behavior tree to true in our manager and voila the
 
 ![Running1.gif](Gifs/Running1.gif)
 
-## Why would we use a behavior tree in the first place?
+## Conclusion
+
+### Why use a Behavior Tree
 
 A behavior tree is really good ad deciding WHEN an action should occur or anything "hardcoded" think a wandering radius.
 
