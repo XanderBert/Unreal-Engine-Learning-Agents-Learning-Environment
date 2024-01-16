@@ -694,7 +694,7 @@ We can also set a timer for the training to stop after a certain amount of time 
 
 This is it for our Imitation manager, We again update our agent to register to this manager and we let it run.
 
-### Inference Manager
+## Inference Manager
 
 (usaually after imitation learning you would run Reinforcement learning to further train the network before we use it)
 
@@ -795,10 +795,6 @@ void ULearningAgentsInteractorCar::GetActions_Implementation(const TArray<int32>
 Here we just stored the actions values in our new struct and only apply them if the bool is set to true.
 
 ### Setup the Behavior Tree
-
-
-
-
 
 1. Create a Behaviour Tree and Blackboard
    ![CreateBehaviorTree.gif](Gifs/CreateBehaviorTree.gif)
